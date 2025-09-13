@@ -1,24 +1,68 @@
-name: Security Tests
+# Continuous Integration workflow for Pickup API Security Testing
+# This workflow runs automated security tests against the pickup API endpoints
 
+name: CI - Pickup API Security Tests
+
+# Define when this workflow will run
 on:
-  pull_request:
   push:
-    branches: [ main ]
+    branches: [ main, develop ]  # Runs on pushes to main and develop branches
+  pull_request:
+    branches: [ main, develop ]  # Runs on PRs targeting main and develop branches
 
 jobs:
-  security:
-    runs-on: ubuntu-latest
+  test:
+    runs-on: ubuntu-latest  # Use latest Ubuntu runner
+
+    # Environment variables loaded from GitHub secrets
+    # These need to be configured in repository settings
+    env:
+      API_BASE_URL: ${{ secrets.API_BASE_URL }}       # Base URL for API endpoints
+      TEST_USER_TOKEN: ${{ secrets.TEST_USER_TOKEN }}  # Authentication token for API
+      SKIP_WALLET_TEST: ${{ secrets.SKIP_WALLET_TEST }}  # Toggle for wallet-related tests
+
     steps:
-      - uses: actions/checkout@v4
-      - name: Setup Python
-        uses: actions/setup-python@v4
-        with:
-          python-version: '3.11'
-      - name: Install deps
-        run: python -m pip install -r requirements.txt
-      - name: Run security tests
-        env:
-          API_BASE_URL: ${{ secrets.SECURITY_API_BASE_URL }}
-          TEST_USER_TOKEN: ${{ secrets.SECURITY_TEST_USER_TOKEN }}
-          SKIP_WALLET_TEST: "true"
-        run: pytest tests/test_pickups_security.py -q --maxfail=1
+    # Step 1: Check out the repository code
+    - name: Checkout code
+      uses: actions/checkout@v4  # Using latest stable version
+
+    # Step 2: Set up Python environment with dependency caching
+    - name: Set up Python
+      uses: actions/setup-python@v5
+      with:
+        python-version: '3.11'  # Using Python 3.11 for testing
+        cache: 'pip'  # Enable pip caching for faster builds
+
+    # Step 3: Install project dependencies
+    - name: Install dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install -r requirements.txt
+
+    # Step 4: Create directories for test outputs
+    - name: Create test directories
+      run: |
+        mkdir -p test-results reports
+
+    # Step 5: Run the security test suite with reporting
+    - name: Run security tests
+      run: |
+        pytest tests/test_pickups_security.py -v --maxfail=1 --disable-warnings \
+        --junitxml=test-results/junit.xml --html=reports/report.html
+
+    # Step 6: Upload test results and reports as artifacts
+    - name: Upload test results
+      if: always()  # Run this step even if tests fail
+      uses: actions/upload-artifact@v4
+      with:
+        name: test-results
+        path: |
+          test-results/
+          reports/
+        retention-days: 7  # Keep test results for a week
+
+    # Step 7: Check test status and provide feedback
+    - name: Custom failure message
+      if: failure()
+      run: echo "::error::Security tests failed. Check reports in the artifacts."
+  
