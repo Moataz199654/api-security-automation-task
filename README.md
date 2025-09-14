@@ -4,35 +4,35 @@ This project contains automated security tests for assessing API endpoints.
 
 ## Project Structure
 ```
-api-security-assessment/
-│
-├── README.md
-├── requirements.txt
-├── .gitignore
-│
-├── .github/
-│   └── workflows/
-│       └── security-tests.yml
-│
-├── config/
-│   ├── env.example
-│   └── testdata/
-│       └── pickups.json
-│
-├── tests/
-│   ├── __init__.py
-│   ├── test_pickups_security.py
-│   ├── test_api2_security.py
-│   └── test_api3_security.py
-│
-├── utils/
-│   ├── __init__.py
-│   ├── auth.py
-│   ├── payloads.py
-│   └── reporting.py
-│
-└── reports/
-    └── .gitkeep
+    api-security-assessment/
+    │
+    ├── README.md
+    ├── requirements.txt
+    ├── .gitignore
+    │
+    ├── .github/
+    │   └── workflows/
+    │       └── security-tests.yml
+    │
+    ├── config/
+    │   ├── env.example
+    │   └── testdata/
+    │       └── pickups.json
+    │
+    ├── tests/
+    │   ├── __init__.py
+    │   ├── test_pickups_security.py
+    │   ├── test_api2_security.py
+    │   └── test_api3_security.py
+    │
+    ├── utils/
+    │   ├── __init__.py
+    │   ├── auth.py
+    │   ├── payloads.py
+    │   └── reporting.py
+    │
+    └── reports/
+        └── .gitkeep
 ```
 
 ## Setup
