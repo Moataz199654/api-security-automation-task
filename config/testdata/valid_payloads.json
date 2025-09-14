@@ -1,0 +1,27 @@
+{
+  "valid_pickup": {
+    "businessLocationId": "MFqXsoFhxO",
+    "contactPerson": {
+      "id": "sCFBrHGi",
+      "name": "test_name",
+      "email": "amira.mosa+991^@bosta.co",
+      "phone": "+201055592829"
+    },
+    "scheduledDate": "2025-06-30",
+    "numberOfParcels": "3",
+    "hasBigItems": false,
+    "repeatedData": {
+      "repeatedType": "One Time"
+    },
+    "creationSrc": "Web"
+  },
+  "valid_bank_info": {
+    "bankInfo": {
+      "beneficiaryName": "test name",
+      "bankName": "NBG - البنك اليوناني الأهلي مصر",
+      "accountNumber": "123",
+      "ibanNumber": "EG1234567890123456789012",
+      "paymentInfoOtp": "123"
+    }
+  }
+}
