@@ -32,7 +32,7 @@ jobs:
     - name: Set up Python
       uses: actions/setup-python@v5
       with:
-        python-version: '3.11'  # Using Python 3.11 for testing
+        python-version: '3.13'  # Using Python 3.13 for testing
         cache: 'pip'  # Enable pip caching for faster builds
 
     # Step 3: Install project dependencies
@@ -49,7 +49,8 @@ jobs:
     # Step 5: Run the security test suite with reporting
     - name: Run security tests
       run: |
-        pytest tests/test_pickups_security.py tests/test_bank_info_update.py tests/test_security_forget_password_api.py -v --maxfail=1 --disable-warnings \
+        pytest tests/test_pickups_security.py tests/test_bank_info_update.py tests/test_security_forget_password_api.py \
+        -v --disable-warnings -n auto \
         --junitxml=test-results/junit.xml --html=reports/report.html
 
     # Step 6: Upload test results and reports as artifacts
