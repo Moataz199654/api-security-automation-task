@@ -81,3 +81,36 @@ def bank_info_with_xss(field: str = "beneficiaryName") -> Dict[str, Any]:
 def bank_info_with_invalid_otp() -> Dict[str, Any]:
     """Create a bank info payload with invalid OTP format"""
     return mutate_field(valid_bank_info(), "bankInfo.paymentInfoOtp", "invalid_otp_format")
+
+
+# ----- Forget Password Security Payloads -----
+def get_sql_injection_payloads() -> list:
+    """
+    Get a list of SQL injection test payloads for email field.
+    These are the most common and effective SQL injection patterns.
+    """
+    return [
+        "' OR '1'='1",  # Basic SQL injection
+        "'; DROP TABLE users; --",  # Destructive SQL injection
+        "' UNION SELECT email FROM users; --",  # Union-based injection
+    ]
+
+def get_critical_special_char_payloads() -> dict:
+    """
+    Get a dictionary of critical special character test payloads for email field.
+    Organized by category, focusing on the most dangerous injection patterns.
+    
+    Categories:
+    - unicode_special_chars: Unicode control characters that could bypass validation
+    - null_control_chars: Null bytes and control characters that could cause string termination
+    """
+    return {
+        "unicode_special_chars": [
+            "test@domain.com\u0000",  # Null character
+            "user\u202E@domain.com",  # Right-to-left override
+            "user@domain.com\u202D",  # Left-to-right override
+        ],
+        "null_control_chars": [
+            "test@domain.com\x00",  # Null byte
+        ]
+    }
