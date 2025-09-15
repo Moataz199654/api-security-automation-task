@@ -9,9 +9,9 @@ name: CI - API Security Tests
 # Define when this workflow will run
 on:
   push:
-    branches: [ main, develop ]  # Runs on pushes to main and develop branches
+    branches: [ main, develop, forget-password-api-tests, bank-info-api-tests, pickups-api-tests ]  # Runs on pushes to feature branches
   pull_request:
-    branches: [ main, develop ]  # Runs on PRs targeting main and develop branches
+    branches: [ main, develop, forget-password-api-tests, bank-info-api-tests, pickups-api-tests ]  # Runs on PRs targeting feature branches
 
 jobs:
   test:
