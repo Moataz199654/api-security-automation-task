@@ -70,3 +70,27 @@ def create_tampered_token(original_token, business_id="FAKE_BUSINESS_ID"):
     
     # Re-encode with dummy secret
     return jwt.encode(payload, "dummy-secret", algorithm="HS256")
+
+
+def get_forget_password_headers(token=None):
+    """
+    Get headers specific to forget password API
+    
+    Args:
+        token (str, optional): Authentication token to include in headers
+    """
+    headers = _get_common_headers()
+    headers.update({
+        "priority": "u=1, i",
+        "sec-ch-ua": "\"Google Chrome\";v=\"137\", \"Chromium\";v=\"137\", \"Not/A)Brand\";v=\"24\"",
+        "sec-ch-ua-mobile": "?0",
+        "sec-ch-ua-platform": "\"Windows\"",
+        "sec-fetch-dest": "empty",
+        "sec-fetch-mode": "cors",
+        "sec-fetch-site": "same-site",
+        "user-agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/137.0.0.0 Safari/537.36",
+        "x-device-id": "01JV70TKSFGV9Z1QWEYV3N5APC"
+    })
+    if token:
+        headers["Authorization"] = f"Bearer {token}"
+    return headers
