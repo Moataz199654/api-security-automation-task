@@ -6,11 +6,12 @@ from copy import deepcopy as _deepcopy
 from datetime import datetime, timedelta
 from pathlib import Path
 from typing import Dict, Any
+from .json_utils import mutate_field
 
-# Load test data from pickups.json
-_PICKUPS_DATA_PATH = Path(__file__).parent.parent / "config" / "testdata" / "pickups.json"
-with open(_PICKUPS_DATA_PATH) as f:
-    _PICKUPS_DATA = json.load(f)
+# Load test data from valid_payloads.json
+_PAYLOADS_DATA_PATH = Path(__file__).parent.parent / "config" / "testdata" / "valid_payloads.json"
+with open(_PAYLOADS_DATA_PATH) as f:
+    _PAYLOADS_DATA = json.load(f)
 
 # ----- Helpers -----
 def _random_string(length: int) -> str:
@@ -18,16 +19,12 @@ def _random_string(length: int) -> str:
     return ''.join(random.choices(string.ascii_letters + string.digits, k=length))
     
 def valid_pickup() -> Dict[str, Any]:
-    """Return a fresh copy of the valid pickup from pickups.json"""
-    return _deepcopy(_PICKUPS_DATA.get("valid_pickup", {}))
+    """Return a fresh copy of the valid pickup from valid_payloads.json"""
+    return _deepcopy(_PAYLOADS_DATA.get("valid_pickup", {}))
 
-def invalid_pickup_missing_contact() -> Dict[str, Any]:
-    """Return the invalid payload missing contactPerson (from pickups.json)"""
-    return _deepcopy(_PICKUPS_DATA.get("invalid_pickup_missing_contact", {}))
-
-def invalid_pickup_bad_email() -> Dict[str, Any]:
-    """Return the invalid payload with bad email (from pickups.json)"""
-    return _deepcopy(_PICKUPS_DATA.get("invalid_pickup_bad_email", {}))
+def valid_bank_info() -> Dict[str, Any]:
+    """Return a fresh copy of the valid bank info from valid_payloads.json"""
+    return _deepcopy(_PAYLOADS_DATA.get("valid_bank_info", {}))
 
 # ----- Dynamic / derived payloads -----
 def pickup_with_future_date(days: int = 2) -> Dict[str, Any]:
@@ -55,52 +52,65 @@ def pickup_with_sql_injection_field(field_path: str = "contactPerson.name") -> D
     Inject a SQLi string into a nested field.
     field_path uses dot notation, e.g. "contactPerson.name" or "businessLocationId".
     """
-    p = valid_pickup()
-    parts = field_path.split(".")
-    cur = p
-    for part in parts[:-1]:
-        cur = cur.setdefault(part, {})
-    cur[parts[-1]] = "'; DROP TABLE users; --"
-    return p
+    return mutate_field(valid_pickup(), field_path, "'; DROP TABLE users; --")
 
 def pickup_with_xss_field(field_path: str = "contactPerson.name") -> Dict[str, Any]:
     """Inject an XSS payload into a nested field (dot notation)."""
-    p = valid_pickup()
-    parts = field_path.split(".")
-    cur = p
-    for part in parts[:-1]:
-        cur = cur.setdefault(part, {})
-    cur[parts[-1]] = "<script>alert('xss')</script>"
-    return p
+    return mutate_field(valid_pickup(), field_path, "<script>alert('xss')</script>")
 
 def pickup_with_oversized_description(size: int = 10000) -> Dict[str, Any]:
     """
     Put a very large string into a package/description-like field.
     If the path doesn't exist in the base payload, this will create it under packageDetails.description.
     """
-    p = valid_pickup()
-    # attempt common locations for description
-    if "packageDetails" not in p:
-        p.setdefault("packageDetails", {})
-    p["packageDetails"]["description"] = "A" * size
-    return p
+    return mutate_field(valid_pickup(), "packageDetails.description", "A" * size)
 
 def pickup_with_invalid_number_of_parcels(value: Any) -> Dict[str, Any]:
     """Set numberOfParcels to an invalid value (string, negative, huge, etc.)."""
-    p = valid_pickup()
-    p["numberOfParcels"] = value
-    return p
+    return mutate_field(valid_pickup(), "numberOfParcels", value)
 
-# ----- Utility to mutate arbitrary dotted path with a given value -----
-def mutate_field(base: Dict[str, Any], field_path: str, value: Any) -> Dict[str, Any]:
+# ----- Bank Info Security Payloads -----
+def bank_info_with_sql_injection(field: str = "beneficiaryName") -> Dict[str, Any]:
+    """Create a bank info payload with SQL injection in specified field"""
+    return mutate_field(valid_bank_info(), f"bankInfo.{field}", "'; DROP TABLE bank_accounts; --")
+
+def bank_info_with_xss(field: str = "beneficiaryName") -> Dict[str, Any]:
+    """Create a bank info payload with XSS in specified field"""
+    return mutate_field(valid_bank_info(), f"bankInfo.{field}", "<script>alert('xss')</script>")
+
+def bank_info_with_invalid_otp() -> Dict[str, Any]:
+    """Create a bank info payload with invalid OTP format"""
+    return mutate_field(valid_bank_info(), "bankInfo.paymentInfoOtp", "invalid_otp_format")
+
+
+# ----- Forget Password Security Payloads -----
+def get_sql_injection_payloads() -> list:
     """
-    Return a mutated copy of `base` where `field_path` (dot notation) is set to `value`.
-    Example: mutate_field(valid_pickup(), "contactPerson.email", "bad@@")
+    Get a list of SQL injection test payloads for email field.
+    These are the most common and effective SQL injection patterns.
     """
-    p = _deepcopy(base)
-    parts = field_path.split(".")
-    cur = p
-    for part in parts[:-1]:
-        cur = cur.setdefault(part, {})
-    cur[parts[-1]] = value
-    return p
+    return [
+        "' OR '1'='1",  # Basic SQL injection
+        "'; DROP TABLE users; --",  # Destructive SQL injection
+        "' UNION SELECT email FROM users; --",  # Union-based injection
+    ]
+
+def get_critical_special_char_payloads() -> dict:
+    """
+    Get a dictionary of critical special character test payloads for email field.
+    Organized by category, focusing on the most dangerous injection patterns.
+    
+    Categories:
+    - unicode_special_chars: Unicode control characters that could bypass validation
+    - null_control_chars: Null bytes and control characters that could cause string termination
+    """
+    return {
+        "unicode_special_chars": [
+            "test@domain.com\u0000",  # Null character
+            "user\u202E@domain.com",  # Right-to-left override
+            "user@domain.com\u202D",  # Left-to-right override
+        ],
+        "null_control_chars": [
+            "test@domain.com\x00",  # Null byte
+        ]
+    }

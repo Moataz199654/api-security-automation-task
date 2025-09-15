@@ -1,14 +1,17 @@
-# Continuous Integration workflow for Pickup API Security Testing
-# This workflow runs automated security tests against the pickup API endpoints
+# Continuous Integration workflow for API Security Testing
+# This workflow runs automated security tests against various API endpoints including:
+# - Pickup API security
+# - Bank info update security
+# - Forget password API security
 
-name: CI - Pickup API Security Tests
+name: CI - API Security Tests
 
 # Define when this workflow will run
 on:
   push:
-    branches: [ main, develop ]  # Runs on pushes to main and develop branches
+    branches: [ main, develop, forget-password-api-tests, bank-info-api-tests, pickups-api-tests ]  # Runs on pushes to feature branches
   pull_request:
-    branches: [ main, develop ]  # Runs on PRs targeting main and develop branches
+    branches: [ main, develop, forget-password-api-tests, bank-info-api-tests, pickups-api-tests ]  # Runs on PRs targeting feature branches
 
 jobs:
   test:
@@ -19,7 +22,6 @@ jobs:
     env:
       API_BASE_URL: ${{ secrets.API_BASE_URL }}       # Base URL for API endpoints
       TEST_USER_TOKEN: ${{ secrets.TEST_USER_TOKEN }}  # Authentication token for API
-      SKIP_WALLET_TEST: ${{ secrets.SKIP_WALLET_TEST }}  # Toggle for wallet-related tests
 
     steps:
     # Step 1: Check out the repository code
@@ -30,7 +32,7 @@ jobs:
     - name: Set up Python
       uses: actions/setup-python@v5
       with:
-        python-version: '3.11'  # Using Python 3.11 for testing
+        python-version: '3.13'  # Using Python 3.13 for testing
         cache: 'pip'  # Enable pip caching for faster builds
 
     # Step 3: Install project dependencies
@@ -47,7 +49,8 @@ jobs:
     # Step 5: Run the security test suite with reporting
     - name: Run security tests
       run: |
-        pytest tests/test_pickups_security.py -v --maxfail=1 --disable-warnings \
+        pytest tests/test_pickups_security.py tests/test_bank_info_update.py tests/test_security_forget_password_api.py \
+        -v --disable-warnings -n auto \
         --junitxml=test-results/junit.xml --html=reports/report.html
 
     # Step 6: Upload test results and reports as artifacts

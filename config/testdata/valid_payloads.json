@@ -14,5 +14,14 @@
       "repeatedType": "One Time"
     },
     "creationSrc": "Web"
+  },
+  "valid_bank_info": {
+    "bankInfo": {
+      "beneficiaryName": "test name",
+      "bankName": "NBG - البنك اليوناني الأهلي مصر",
+      "accountNumber": "123",
+      "ibanNumber": "EG1234567890123456789012",
+      "paymentInfoOtp": "123"
+    }
   }
 }
