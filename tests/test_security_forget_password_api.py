@@ -4,8 +4,10 @@ import time
 import os
 from utils.auth import get_forget_password_headers
 from utils.payloads import get_sql_injection_payloads, get_critical_special_char_payloads
+from tests.helpers import compare_api_responses_with_auth
 
 BASE_URL = os.getenv("API_BASE_URL")
+TEST_USER_TOKEN = os.getenv("TEST_USER_TOKEN")
 
 @pytest.mark.emaill_security
 def test_forget_password_email_enumeration():
@@ -23,7 +25,7 @@ def test_forget_password_email_enumeration():
     Expected: Both requests should return identical responses to prevent email enumeration
     """
     url = f"{BASE_URL}/users/forget-password"
-    headers = get_forget_password_headers()
+    headers = get_forget_password_headers(token=TEST_USER_TOKEN)
     
     # Test data
     valid_email = "amira.mosa+991^@bosta.co"  # Known valid email
@@ -85,7 +87,7 @@ def test_forget_password_rate_limit():
     - Rate limit should be enforced consistently
     """
     url = f"{BASE_URL}/users/forget-password"
-    headers = get_forget_password_headers()
+    headers = get_forget_password_headers(token=TEST_USER_TOKEN)
     test_email = "test.user@bosta.co"
     
     # Track request outcomes
@@ -155,7 +157,7 @@ def test_forget_password_sql_injection():
     - Consistent error responses regardless of payload
     """
     url = f"{BASE_URL}/users/forget-password"
-    headers = get_forget_password_headers()
+    headers = get_forget_password_headers(token=TEST_USER_TOKEN)
     
     # Get SQL injection test payloads
     sql_payloads = get_sql_injection_payloads()
@@ -220,7 +222,7 @@ def test_forget_password_special_chars_validation():
     - No internal server errors
     """
     url = f"{BASE_URL}/users/forget-password"
-    headers = get_forget_password_headers()
+    headers = get_forget_password_headers(token=TEST_USER_TOKEN)
     
     # Get critical special character test payloads
     payloads = get_critical_special_char_payloads()
@@ -273,3 +275,48 @@ def test_forget_password_special_chars_validation():
     print(f"✓ All malformed emails properly rejected")
     print(f"✓ No server errors encountered")
     print(f"✓ Consistent error responses across all categories")
+
+
+@pytest.mark.auth_behavior
+def test_forget_password_auth_behavior():
+    """
+    Security test: Verify consistent behavior with and without authentication token
+    
+    Objective: Ensure the forget password API behaves consistently regardless of 
+              authentication status to prevent information leakage.
+    
+    Steps:
+    1. Send request with valid email with auth token
+    2. Send request with valid email without auth token
+    3. Compare responses to ensure they are identical
+    4. Repeat for invalid email
+    
+    Expected: 
+    - API should return identical responses regardless of auth token presence
+    - No additional information should be leaked when authenticated
+    """
+    url = f"{BASE_URL}/users/forget-password"
+    
+    # Test data
+    valid_email = "amira.mosa+991^@bosta.co"
+    invalid_email = "nonexistent.user@bosta.co"
+    
+    # Test with valid email
+    valid_status, valid_auth_json, valid_no_auth_json = compare_api_responses_with_auth(
+        url=url,
+        payload={"email": valid_email},
+        auth_token=TEST_USER_TOKEN
+    )
+    print(f"\nValid email response status: {valid_status}")
+    
+    # Test with invalid email
+    invalid_status, invalid_auth_json, invalid_no_auth_json = compare_api_responses_with_auth(
+        url=url,
+        payload={"email": invalid_email},
+        auth_token=TEST_USER_TOKEN
+    )
+    print(f"\nInvalid email response status: {invalid_status}")
+    
+    print("\n✅ Security check passed: Authentication behavior")
+    print("✓ Consistent responses with and without authentication")
+    print("✓ No information leakage through authentication")
