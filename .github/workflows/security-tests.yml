@@ -1,7 +1,7 @@
-# Continuous Integration workflow for Pickup API Security Testing
-# This workflow runs automated security tests against the pickup API endpoints
+# Continuous Integration workflow for API Security Testing
+# This workflow runs automated security tests against various API endpoints including pickup and bank info
 
-name: CI - Pickup API Security Tests
+name: CI - API Security Tests
 
 # Define when this workflow will run
 on:
@@ -47,7 +47,7 @@ jobs:
     # Step 5: Run the security test suite with reporting
     - name: Run security tests
       run: |
-        pytest tests/test_pickups_security.py -v --maxfail=1 --disable-warnings \
+        pytest tests/test_pickups_security.py tests/test_bank_info_update.py -v --maxfail=1 --disable-warnings \
         --junitxml=test-results/junit.xml --html=reports/report.html
 
     # Step 6: Upload test results and reports as artifacts
